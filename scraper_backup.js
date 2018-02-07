@@ -9,7 +9,7 @@ var casper = require("casper").create({
   },
   clientScripts: ["vendor/jquery.min.js", "vendor/lodash.js"]
 });
-var x = require('casper').selectXPath;
+
 var utils = require('utils');
 var fs = require('fs');
 var passValues = {};
@@ -99,45 +99,72 @@ function getPage() {
     }
 	return dataArray;
   }
-	casper.then(function() {	
-		var link = this.evaluate(getLink);	
-		utils.dump(link);
-		
-		var pageLink = this.evaluate(getPageLink);	
-		utils.dump(pageLink);
+casper.then(function() {
+	
+	
+	
+	var link = this.evaluate(getLink);	
    
-    
-	})
+     for(i = 0; i < 2; i++){
+
+  casper.thenOpen(link[i], function() {
+    var n = 0;
 	
-	casper.then(function() {
-    var count = this.getElementsInfo("a").length;
-    for(var i = 1; i <= count; i++){
-        this.thenClick(x('(//a)['+i+']'))
-            .then(function(){
-                console.log('clicked ok, new location is ' + this.getCurrentUrl());
-            })
-            .back()
-            .then(function(){
-                console.log('back to location ' + this.getCurrentUrl());
-            });
-    }
-});
+    this.echo(this.getCurrentUrl());
 	
-	casper.then(function() {	
-		var link = this.evaluate(getLink);	
-		utils.dump(link);
+	    subject = this.evaluate(getSubject);
 		
-		var pageLink = this.evaluate(getPageLink);	
-		utils.dump(pageLink);
-   
-    
-	})//END FOR
+		pageContent[i] = [];
+		
+		pageContent[i][n] = subject;
+		
+		n++;
+		
+        dates = this.evaluate(getDate);
+		
+		pageContent[i][n] = dates;
+		
+		n++;
+		
+        age = this.evaluate(getAge);
+		
+		pageContent[i][n] = age;
+		
+		n++;
+		
+        image = this.evaluate(getImageSource);
+		
+		 pageContent[i][n] = [];
+		 
+         for(t = 0; t < image.length; t++){
+			 
+           var path = image[t].slice(-36);
+		   
+           pageContent[i][n][t] += path;
+		   
+           this.download(image[t], 'C:\\images\\' + path);
+         }
+		 
+		 
+	   allContent.push(pageContent[i]);
+	   
+	   utils.dump(allContent);
+	   
+	   
+	   var allContents = JSON.stringify(allContent);
+       passValues.valContent = allContents;
+     });//END OPEN
+	 
+	 
+  }//END FOR
 	
-//command to run in terminal
-//casperjs --proxy=173.234.248.235:3128 --proxy-type=http scraper.js
+	
 
+});//END THEN
 
-casper.run(function() { 
+casper.run(function() {
+  var posts = passValues.valContent;
+  fs.write('data.json', posts , 'w');
   this.exit();
 });
 
